@@ -1,0 +1,15 @@
+[Unit]
+Description=VirtualCorp: senyal d'arrencada completa pel port sèrie
+# Quan SSH ja és actiu, escriu VCORP-READY al port sèrie (COM1).
+# VirtualBox redirigeix COM1 a un fitxer de l'amfitrió i els scripts
+# de desplegament hi busquen la marca, encara que la VM no tingui
+# cap xarxa accessible des de l'amfitrió.
+After=ssh.service vcorp-firstboot.service
+Wants=ssh.service
+
+[Service]
+Type=oneshot
+ExecStart=-/bin/sh -c 'echo "VCORP-READY $(hostname)" > /dev/ttyS0'
+
+[Install]
+WantedBy=multi-user.target

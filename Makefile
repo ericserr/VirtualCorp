@@ -32,7 +32,7 @@ help:
 	  'Activitat 2:' \
 	  '  check_host        Comprova VT-x, RAM, disc i eines de l'"'"'amfitrió' \
 	  '  download_isos     Descarrega i verifica (SHA256) les ISO fixades' \
-	  '  create_templates  Crea els templates Debian Server i Desktop (FORCE=1 per refer-los)' \
+	  '  create_templates  Crea els templates Debian (ROLE=server|desktop, FORCE=1 per refer-los)' \
 	  '  delete_templates  Esborra els templates (falla si tenen clons enllaçats)'
 
 deploy-routers:
@@ -65,7 +65,7 @@ download_isos:
 	"$(BASH_DIR)/download_isos.sh"
 
 create_templates: download_isos
-	FORCE="$(FORCE)" "$(BASH_DIR)/create_templates.sh"
+	FORCE="$(FORCE)" "$(BASH_DIR)/create_templates.sh" $(ROLE)
 
 delete_templates:
-	"$(BASH_DIR)/del_vbox_group.sh" "$(VM_TEMPLATES_GROUP)"
+	"$(BASH_DIR)/create_templates.sh" --delete $(ROLE)
