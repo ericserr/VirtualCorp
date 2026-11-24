@@ -1,0 +1,14 @@
+[Unit]
+Description=VirtualCorp: identitat del clon (claus SSH i nom de host)
+DefaultDependencies=no
+After=local-fs.target
+Before=ssh.service network-pre.target systemd-hostnamed.service
+Wants=network-pre.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/vcorp-firstboot
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
