@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="ca"><head><meta charset="utf-8">
+<title>Disseny de xarxa · Delegació 25</title>
+<style>
+@page { size: A4 landscape; margin: 12mm; }
+body { font-family: 'DejaVu Sans', Arial, sans-serif; color:#1d2430; margin:0; font-size:11pt; }
+section { page-break-after: always; }
+section:last-child { page-break-after: auto; }
+h1 { font-size:22pt; margin:0 0 4px; color:#33475b; }
+h2 { font-size:15pt; margin:0 0 8px; color:#33475b; border-bottom:2px solid #33475b; padding-bottom:3px; }
+p.sub { margin:0 0 14px; color:#5b6675; }
+table { border-collapse:collapse; width:100%; font-size:9.5pt; margin-bottom:10px; }
+th { background:#33475b; color:#fff; text-align:left; padding:5px 7px; }
+td { border-bottom:1px solid #cfd6df; padding:4px 7px; }
+tr:nth-child(even) td { background:#f3f5f8; }
+svg { width:100%; height:auto; }
+ul { margin:4px 0; padding-left:18px; font-size:10pt; }
+li { margin-bottom:3px; }
+.cols { display:flex; gap:18px; } .cols > div { flex:1; }
+</style></head><body>
+
+<section>
+<h1>VirtualCorp · Delegació 25 · Disseny de xarxa</h1>
+<p class="sub">Rang 10.25.0.0/16 · domini del25.virtualcorp.internal · Activitat 2 (templates i desplegament d'equips) · novembre 2026</p>
+<h2>Pla d'adreçament</h2>
+<table><thead><tr><th>Segment</th><th>Xarxa</th><th>Xarxa interna VBox</th><th>Router / porta d&#x27;enllaç</th><th>Ús</th></tr></thead><tbody><tr><td>Planta baixa · zona general</td><td>10.25.0.0/25</td><td>pl0</td><td>router1 · 10.25.0.1</td><td>Consergeria, expositors, printer0</td></tr><tr><td>Planta baixa · zona privada</td><td>10.25.0.128/26</td><td>privada</td><td>router0 · 10.25.0.129</td><td>CPD intern: pve01, dbsrv, infosrv</td></tr><tr><td>Planta baixa · DMZ</td><td>10.25.0.192/27</td><td>dmz</td><td>router0 · 10.25.0.193</td><td>Serveis públics: websrv</td></tr><tr><td>Enllaç router0–router1</td><td>10.25.0.224/30</td><td>r0-r1</td><td>.225 / .226</td><td>Troncal</td></tr><tr><td>Enllaç router1–router2</td><td>10.25.0.228/30</td><td>r1-r2</td><td>.229 / .230</td><td>Troncal</td></tr><tr><td>Enllaç router2–router3</td><td>10.25.0.232/30</td><td>r2-r3</td><td>.233 / .234</td><td>Troncal</td></tr><tr><td>Planta 1</td><td>10.25.1.0/24</td><td>pl1</td><td>router2 · 10.25.1.1</td><td>Desenvolupament i projectes</td></tr><tr><td>Planta 2</td><td>10.25.2.0/24</td><td>pl2</td><td>router2 · 10.25.2.1</td><td>Desenvolupament i projectes</td></tr><tr><td>Planta 3 · departaments</td><td>10.25.3.0/25</td><td>pl3</td><td>router3 · 10.25.3.1</td><td>Comercial, gestió, màrqueting</td></tr><tr><td>Planta 3 · direcció</td><td>10.25.3.128/25</td><td>pl3-direccio</td><td>router3 · 10.25.3.129</td><td>Xarxa aïllada de direcció</td></tr></tbody></table>
+<div class="cols"><div>
+<h2>Adreces reservades</h2>
+<ul>
+<li><b>pve01</b> 10.25.0.133 (estàtica) · <b>dbsrv</b> .134 · <b>infosrv</b> .135 a la zona privada.</li>
+<li><b>websrv</b> 10.25.0.197 a la DMZ.</li>
+<li><b>printer0..3</b> 10.25.n.65 (n = planta) · <b>expo1..4</b> 10.25.0.33–36.</li>
+<li>Totes les màquines, excepte pve01, usen DHCP; les IP reservades es fixaran amb reserves per MAC quan es desplegui el servei DHCP.</li>
+</ul></div><div>
+<h2>Canvis respecte al disseny anterior</h2>
+<ul>
+<li>router0 té una interfície nova a la zona <b>privada</b> (10.25.0.129/26), anunciada per RIP, perquè pve01 arribi als routers i a Internet.</li>
+<li>Es fan servir els noms de xarxa interna dels routers ja desplegats: <b>pl3-direccio</b>, <b>r0-r1</b>, <b>r1-r2</b>, <b>r2-r3</b> (l'enunciat proposa pl3_direccio i rt0_1…).</li>
+<li>S'hi afegeixen els 22 equips i pve01 desplegats en aquesta activitat.</li>
+</ul></div></div>
+</section>
+
+<section>
+<h2>Diagrama lògic (nivell 3)</h2>
+<svg viewBox='0 0 1240 625' xmlns='http://www.w3.org/2000/svg'>
+<ellipse cx='185.0' cy='70' rx='95' ry='38' fill='#eef1f5' stroke='#5b6675' stroke-width='1.5'/>
+<text x='185.0' y='67' font-family='DejaVu Sans, Arial, sans-serif' font-size='14' font-weight='bold' text-anchor='middle' fill='#1d2430'>Internet / ISP</text>
+<text x='185.0' y='85' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='middle' fill='#1d2430'>via NAT de VirtualBox</text>
+<line x1='185.0' y1='108' x2='185.0' y2='193' stroke='#5b6675' stroke-width='2' stroke-dasharray='6 4'/>
+<text x='193.0' y='154.5' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='start' fill='#5b6675'>ether1 · NAT (DHCP 10.0.2.0/24)</text>
+<line x1='247.0' y1='225' x2='385.5' y2='225' stroke='#33475b' stroke-width='3'/>
+<text x='316.25' y='199' font-family='DejaVu Sans, Arial, sans-serif' font-size='12' font-weight='bold' text-anchor='middle' fill='#1d2430'>r0-r1</text>
+<text x='316.25' y='213' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='middle' fill='#1d2430'>10.25.0.224/30</text>
+<text x='251.0' y='241' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='start' fill='#1d2430'>.225</text>
+<text x='381.5' y='241' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='end' fill='#1d2430'>.226</text>
+<line x1='509.5' y1='225' x2='648.0' y2='225' stroke='#33475b' stroke-width='3'/>
+<text x='578.75' y='199' font-family='DejaVu Sans, Arial, sans-serif' font-size='12' font-weight='bold' text-anchor='middle' fill='#1d2430'>r1-r2</text>
+<text x='578.75' y='213' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='middle' fill='#1d2430'>10.25.0.228/30</text>
+<text x='513.5' y='241' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='start' fill='#1d2430'>.229</text>
+<text x='644.0' y='241' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='end' fill='#1d2430'>.230</text>
+<line x1='772.0' y1='225' x2='998.0' y2='225' stroke='#33475b' stroke-width='3'/>
+<text x='885.0' y='199' font-family='DejaVu Sans, Arial, sans-serif' font-size='12' font-weight='bold' text-anchor='middle' fill='#1d2430'>r2-r3</text>
+<text x='885.0' y='213' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='middle' fill='#1d2430'>10.25.0.232/30</text>
+<text x='776.0' y='241' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='start' fill='#1d2430'>.233</text>
+<text x='994.0' y='241' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='end' fill='#1d2430'>.234</text>
+<rect x='123.0' y='193' width='124' height='64' rx='10' fill='#33475b'/>
+<text x='185.0' y='219' font-family='DejaVu Sans, Arial, sans-serif' font-size='15' font-weight='bold' text-anchor='middle' fill='#ffffff'>router0</text>
+<text x='185.0' y='238' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='middle' fill='#dfe7ef'>mikrotik0 · RIP</text>
+<rect x='385.5' y='193' width='124' height='64' rx='10' fill='#33475b'/>
+<text x='447.5' y='219' font-family='DejaVu Sans, Arial, sans-serif' font-size='15' font-weight='bold' text-anchor='middle' fill='#ffffff'>router1</text>
+<text x='447.5' y='238' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='middle' fill='#dfe7ef'>mikrotik1 · RIP</text>
+<rect x='648.0' y='193' width='124' height='64' rx='10' fill='#33475b'/>
+<text x='710.0' y='219' font-family='DejaVu Sans, Arial, sans-serif' font-size='15' font-weight='bold' text-anchor='middle' fill='#ffffff'>router2</text>
+<text x='710.0' y='238' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='middle' fill='#dfe7ef'>mikrotik2 · RIP</text>
+<rect x='998.0' y='193' width='124' height='64' rx='10' fill='#33475b'/>
+<text x='1060.0' y='219' font-family='DejaVu Sans, Arial, sans-serif' font-size='15' font-weight='bold' text-anchor='middle' fill='#ffffff'>router3</text>
+<text x='1060.0' y='238' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='middle' fill='#dfe7ef'>mikrotik3 · RIP</text>
+<path d='M185.0,257 L185.0,300 L97.5,300 L97.5,380' fill='none' stroke='#33475b' stroke-width='2'/>
+<text x='102.5' y='372' font-family='DejaVu Sans, Arial, sans-serif' font-size='10.5' font-weight='normal' text-anchor='start' fill='#33475b'>gw 10.25.0.193</text>
+<rect x='15' y='380' width='165' height='225' rx='8' fill='#f4d7c6' stroke='#5b6675'/>
+<text x='97.5' y='402' font-family='DejaVu Sans, Arial, sans-serif' font-size='14' font-weight='bold' text-anchor='middle' fill='#1d2430'>dmz</text>
+<text x='97.5' y='420' font-family='DejaVu Sans, Arial, sans-serif' font-size='12' font-weight='normal' text-anchor='middle' fill='#1d2430'>10.25.0.192/27</text>
+<line x1='25' y1='430' x2='170' y2='430' stroke='#8792a2'/>
+<text x='27' y='452' font-family='DejaVu Sans, Arial, sans-serif' font-size='12' font-weight='normal' text-anchor='start' fill='#1d2430'>websrv</text>
+<text x='168' y='452' font-family='DejaVu Sans, Arial, sans-serif' font-size='11.5' font-weight='normal' text-anchor='end' fill='#3d4756'>.197</text>
+<path d='M185.0,257 L185.0,300 L272.5,300 L272.5,380' fill='none' stroke='#33475b' stroke-width='2'/>
+<text x='277.5' y='372' font-family='DejaVu Sans, Arial, sans-serif' font-size='10.5' font-weight='normal' text-anchor='start' fill='#33475b'>gw 10.25.0.129</text>
+<rect x='190' y='380' width='165' height='225' rx='8' fill='#d6e4f5' stroke='#5b6675'/>
+<text x='272.5' y='402' font-family='DejaVu Sans, Arial, sans-serif' font-size='14' font-weight='bold' text-anchor='middle' fill='#1d2430'>privada</text>
+<text x='272.5' y='420' font-family='DejaVu Sans, Arial, sans-serif' font-size='12' font-weight='normal' text-anchor='middle' fill='#1d2430'>10.25.0.128/26</text>
+<line x1='200' y1='430' x2='345' y2='430' stroke='#8792a2'/>
+<text x='202' y='452' font-family='DejaVu Sans, Arial, sans-serif' font-size='12' font-weight='bold' text-anchor='start' fill='#1d2430'>pve01</text>
+<text x='343' y='452' font-family='DejaVu Sans, Arial, sans-serif' font-size='11.5' font-weight='normal' text-anchor='end' fill='#3d4756'>.133 fixa</text>
+<text x='202' y='473' font-family='DejaVu Sans, Arial, sans-serif' font-size='12' font-weight='normal' text-anchor='start' fill='#1d2430'>dbsrv</text>
+<text x='343' y='473' font-family='DejaVu Sans, Arial, sans-serif' font-size='11.5' font-weight='normal' text-anchor='end' fill='#3d4756'>.134</text>
+<text x='202' y='494' font-family='DejaVu Sans, Arial, sans-serif' font-size='12' font-weight='normal' text-anchor='start' fill='#1d2430'>infosrv</text>
+<text x='343' y='494' font-family='DejaVu Sans, Arial, sans-serif' font-size='11.5' font-weight='normal' text-anchor='end' fill='#3d4756'>.135</text>
+<path d='M447.5,257 L447.5,300 L447.5,300 L447.5,380' fill='none' stroke='#33475b' stroke-width='2'/>
+<text x='452.5' y='372' font-family='DejaVu Sans, Arial, sans-serif' font-size='10.5' font-weight='normal' text-anchor='start' fill='#33475b'>gw 10.25.0.1</text>
+<rect x='365' y='380' width='165' height='225' rx='8' fill='#dcefd9' stroke='#5b6675'/>
+<text x='447.5' y='402' font-family='DejaVu Sans, Arial, sans-serif' font-size='14' font-weight='bold' text-anchor='middle' fill='#1d2430'>pl0</text>
+<text x='447.5' y='420' font-family='DejaVu Sans, Arial, sans-serif' font-size='12' font-weight='normal' text-anchor='middle' fill='#1d2430'>10.25.0.0/25</text>
+<line x1='375' y1='430' x2='520' y2='430' stroke='#8792a2'/>
+<text x='377' y='452' font-family='DejaVu Sans, Arial, sans-serif' font-size='12' font-weight='normal' text-anchor='start' fill='#1d2430'>printer0</text>
+<text x='518' y='452' font-family='DejaVu Sans, Arial, sans-serif' font-size='11.5' font-weight='normal' text-anchor='end' fill='#3d4756'>.65</text>
+<text x='377' y='473' font-family='DejaVu Sans, Arial, sans-serif' font-size='12' font-weight='normal' text-anchor='start' fill='#1d2430'>expo1</text>
+<text x='518' y='473' font-family='DejaVu Sans, Arial, sans-serif' font-size='11.5' font-weight='normal' text-anchor='end' fill='#3d4756'>.33</text>
+<text x='377' y='494' font-family='DejaVu Sans, Arial, sans-serif' font-size='12' font-weight='normal' text-anchor='start' fill='#1d2430'>expo2</text>
+<text x='518' y='494' font-family='DejaVu Sans, Arial, sans-serif' font-size='11.5' font-weight='normal' text-anchor='end' fill='#3d4756'>.34</text>
+<text x='377' y='515' font-family='DejaVu Sans, Arial, sans-serif' font-size='12' font-weight='normal' text-anchor='start' fill='#1d2430'>expo3</text>
+<text x='518' y='515' font-family='DejaVu Sans, Arial, sans-serif' font-size='11.5' font-weight='normal' text-anchor='end' fill='#3d4756'>.35</text>
+<text x='377' y='536' font-family='DejaVu Sans, Arial, sans-serif' font-size='12' font-weight='normal' text-anchor='start' fill='#1d2430'>expo4</text>
+<text x='518' y='536' font-family='DejaVu Sans, Arial, sans-serif' font-size='11.5' font-weight='normal' text-anchor='end' fill='#3d4756'>.36</text>
+<text x='377' y='557' font-family='DejaVu Sans, Arial, sans-serif' font-size='12' font-weight='normal' text-anchor='start' fill='#1d2430'>conserge1</text>
+<text x='518' y='557' font-family='DejaVu Sans, Arial, sans-serif' font-size='11.5' font-weight='normal' text-anchor='end' fill='#3d4756'>DHCP</text>
+<text x='377' y='578' font-family='DejaVu Sans, Arial, sans-serif' font-size='12' font-weight='normal' text-anchor='start' fill='#1d2430'>conserge2</text>
+<text x='518' y='578' font-family='DejaVu Sans, Arial, sans-serif' font-size='11.5' font-weight='normal' text-anchor='end' fill='#3d4756'>DHCP</text>
+<path d='M710.0,257 L710.0,300 L622.5,300 L622.5,380' fill='none' stroke='#33475b' stroke-width='2'/>
+<text x='627.5' y='372' font-family='DejaVu Sans, Arial, sans-serif' font-size='10.5' font-weight='normal' text-anchor='start' fill='#33475b'>gw 10.25.1.1</text>
+<rect x='540' y='380' width='165' height='225' rx='8' fill='#ece0f3' stroke='#5b6675'/>
+<text x='622.5' y='402' font-family='DejaVu Sans, Arial, sans-serif' font-size='14' font-weight='bold' text-anchor='middle' fill='#1d2430'>pl1</text>
+<text x='622.5' y='420' font-family='DejaVu Sans, Arial, sans-serif' font-size='12' font-weight='normal' text-anchor='middle' fill='#1d2430'>10.25.1.0/24</text>
+<line x1='550' y1='430' x2='695' y2='430' stroke='#8792a2'/>
+<text x='552' y='452' font-family='DejaVu Sans, Arial, sans-serif' font-size='12' font-weight='normal' text-anchor='start' fill='#1d2430'>printer1</text>
+<text x='693' y='452' font-family='DejaVu Sans, Arial, sans-serif' font-size='11.5' font-weight='normal' text-anchor='end' fill='#3d4756'>.65</text>
+<text x='552' y='473' font-family='DejaVu Sans, Arial, sans-serif' font-size='12' font-weight='normal' text-anchor='start' fill='#1d2430'>pc-pl1-01</text>
+<text x='693' y='473' font-family='DejaVu Sans, Arial, sans-serif' font-size='11.5' font-weight='normal' text-anchor='end' fill='#3d4756'>DHCP</text>
+<text x='552' y='494' font-family='DejaVu Sans, Arial, sans-serif' font-size='12' font-weight='normal' text-anchor='start' fill='#1d2430'>pc-pl1-02</text>
+<text x='693' y='494' font-family='DejaVu Sans, Arial, sans-serif' font-size='11.5' font-weight='normal' text-anchor='end' fill='#3d4756'>DHCP</text>
+<path d='M710.0,257 L710.0,300 L797.5,300 L797.5,380' fill='none' stroke='#33475b' stroke-width='2'/>
+<text x='802.5' y='372' font-family='DejaVu Sans, Arial, sans-serif' font-size='10.5' font-weight='normal' text-anchor='start' fill='#33475b'>gw 10.25.2.1</text>
+<rect x='715' y='380' width='165' height='225' rx='8' fill='#ece0f3' stroke='#5b6675'/>
+<text x='797.5' y='402' font-family='DejaVu Sans, Arial, sans-serif' font-size='14' font-weight='bold' text-anchor='middle' fill='#1d2430'>pl2</text>
+<text x='797.5' y='420' font-family='DejaVu Sans, Arial, sans-serif' font-size='12' font-weight='normal' text-anchor='middle' fill='#1d2430'>10.25.2.0/24</text>
+<line x1='725' y1='430' x2='870' y2='430' stroke='#8792a2'/>
+<text x='727' y='452' font-family='DejaVu Sans, Arial, sans-serif' font-size='12' font-weight='normal' text-anchor='start' fill='#1d2430'>printer2</text>
+<text x='868' y='452' font-family='DejaVu Sans, Arial, sans-serif' font-size='11.5' font-weight='normal' text-anchor='end' fill='#3d4756'>.65</text>
+<text x='727' y='473' font-family='DejaVu Sans, Arial, sans-serif' font-size='12' font-weight='normal' text-anchor='start' fill='#1d2430'>pc-pl2-01</text>
+<text x='868' y='473' font-family='DejaVu Sans, Arial, sans-serif' font-size='11.5' font-weight='normal' text-anchor='end' fill='#3d4756'>DHCP</text>
+<text x='727' y='494' font-family='DejaVu Sans, Arial, sans-serif' font-size='12' font-weight='normal' text-anchor='start' fill='#1d2430'>pc-pl2-02</text>
+<text x='868' y='494' font-family='DejaVu Sans, Arial, sans-serif' font-size='11.5' font-weight='normal' text-anchor='end' fill='#3d4756'>DHCP</text>
+<path d='M1060.0,257 L1060.0,300 L972.5,300 L972.5,380' fill='none' stroke='#33475b' stroke-width='2'/>
+<text x='977.5' y='372' font-family='DejaVu Sans, Arial, sans-serif' font-size='10.5' font-weight='normal' text-anchor='start' fill='#33475b'>gw 10.25.3.1</text>
+<rect x='890' y='380' width='165' height='225' rx='8' fill='#f6efc8' stroke='#5b6675'/>
+<text x='972.5' y='402' font-family='DejaVu Sans, Arial, sans-serif' font-size='14' font-weight='bold' text-anchor='middle' fill='#1d2430'>pl3</text>
+<text x='972.5' y='420' font-family='DejaVu Sans, Arial, sans-serif' font-size='12' font-weight='normal' text-anchor='middle' fill='#1d2430'>10.25.3.0/25</text>
+<line x1='900' y1='430' x2='1045' y2='430' stroke='#8792a2'/>
+<text x='902' y='452' font-family='DejaVu Sans, Arial, sans-serif' font-size='12' font-weight='normal' text-anchor='start' fill='#1d2430'>printer3</text>
+<text x='1043' y='452' font-family='DejaVu Sans, Arial, sans-serif' font-size='11.5' font-weight='normal' text-anchor='end' fill='#3d4756'>.65</text>
+<text x='902' y='473' font-family='DejaVu Sans, Arial, sans-serif' font-size='12' font-weight='normal' text-anchor='start' fill='#1d2430'>pc-pl3-01</text>
+<text x='1043' y='473' font-family='DejaVu Sans, Arial, sans-serif' font-size='11.5' font-weight='normal' text-anchor='end' fill='#3d4756'>DHCP</text>
+<text x='902' y='494' font-family='DejaVu Sans, Arial, sans-serif' font-size='12' font-weight='normal' text-anchor='start' fill='#1d2430'>pc-pl3-02</text>
+<text x='1043' y='494' font-family='DejaVu Sans, Arial, sans-serif' font-size='11.5' font-weight='normal' text-anchor='end' fill='#3d4756'>DHCP</text>
+<path d='M1060.0,257 L1060.0,300 L1147.5,300 L1147.5,380' fill='none' stroke='#33475b' stroke-width='2'/>
+<text x='1152.5' y='372' font-family='DejaVu Sans, Arial, sans-serif' font-size='10.5' font-weight='normal' text-anchor='start' fill='#33475b'>gw 10.25.3.129</text>
+<rect x='1065' y='380' width='165' height='225' rx='8' fill='#f5d0d0' stroke='#5b6675'/>
+<text x='1147.5' y='402' font-family='DejaVu Sans, Arial, sans-serif' font-size='14' font-weight='bold' text-anchor='middle' fill='#1d2430'>pl3-direccio</text>
+<text x='1147.5' y='420' font-family='DejaVu Sans, Arial, sans-serif' font-size='12' font-weight='normal' text-anchor='middle' fill='#1d2430'>10.25.3.128/25</text>
+<line x1='1075' y1='430' x2='1220' y2='430' stroke='#8792a2'/>
+<text x='1077' y='452' font-family='DejaVu Sans, Arial, sans-serif' font-size='12' font-weight='normal' text-anchor='start' fill='#1d2430'>direccio1</text>
+<text x='1218' y='452' font-family='DejaVu Sans, Arial, sans-serif' font-size='11.5' font-weight='normal' text-anchor='end' fill='#3d4756'>DHCP</text>
+<text x='1077' y='473' font-family='DejaVu Sans, Arial, sans-serif' font-size='12' font-weight='normal' text-anchor='start' fill='#1d2430'>direccio2</text>
+<text x='1218' y='473' font-family='DejaVu Sans, Arial, sans-serif' font-size='11.5' font-weight='normal' text-anchor='end' fill='#3d4756'>DHCP</text>
+<text x='1077' y='494' font-family='DejaVu Sans, Arial, sans-serif' font-size='12' font-weight='normal' text-anchor='start' fill='#1d2430'>direccio3</text>
+<text x='1218' y='494' font-family='DejaVu Sans, Arial, sans-serif' font-size='11.5' font-weight='normal' text-anchor='end' fill='#3d4756'>DHCP</text>
+<text x='15' y='619' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='start' fill='#3d4756'>Totes les xarxes formen part de 10.25.0.0/16. Encaminament dinàmic RIP (redistribute connected); ruta per defecte cap a router0.</text>
+</svg>
+</section>
+
+<section>
+<h2>Diagrama físic (VirtualBox: adaptadors i xarxes internes)</h2>
+<svg viewBox='0 0 1240 700' xmlns='http://www.w3.org/2000/svg'>
+<rect x='4' y='4' width='1232' height='670' rx='12' fill='none' stroke='#8792a2' stroke-dasharray='8 5'/>
+<text x='16' y='26' font-family='DejaVu Sans, Arial, sans-serif' font-size='12' font-weight='bold' text-anchor='start' fill='#5b6675'>Amfitrió: Ubuntu 24.04 · VirtualBox 7.2 · i5-1235U, 15,6 GB RAM</text>
+<line x1='151.0' y1='118' x2='64.5' y2='300' stroke='#b5502b' stroke-width='1.6' stroke-dasharray='6 4'/>
+<text x='151.0' y='132' font-family='DejaVu Sans, Arial, sans-serif' font-size='9.5' font-weight='normal' text-anchor='middle' fill='#b5502b'>N1</text>
+<line x1='184.33333333333334' y1='118' x2='397.5' y2='300' stroke='#33475b' stroke-width='1.6'/>
+<text x='184.33333333333334' y='132' font-family='DejaVu Sans, Arial, sans-serif' font-size='9.5' font-weight='normal' text-anchor='middle' fill='#33475b'>N2</text>
+<line x1='217.66666666666669' y1='118' x2='175.5' y2='300' stroke='#33475b' stroke-width='1.6'/>
+<text x='217.66666666666669' y='132' font-family='DejaVu Sans, Arial, sans-serif' font-size='9.5' font-weight='normal' text-anchor='middle' fill='#33475b'>N3</text>
+<line x1='251.0' y1='118' x2='286.5' y2='300' stroke='#33475b' stroke-width='1.6'/>
+<text x='251.0' y='132' font-family='DejaVu Sans, Arial, sans-serif' font-size='9.5' font-weight='normal' text-anchor='middle' fill='#33475b'>N4</text>
+<rect x='141.0' y='62' width='120' height='56' rx='9' fill='#33475b'/>
+<text x='201.0' y='86' font-family='DejaVu Sans, Arial, sans-serif' font-size='14' font-weight='bold' text-anchor='middle' fill='#ffffff'>mikrotik0</text>
+<text x='201.0' y='104' font-family='DejaVu Sans, Arial, sans-serif' font-size='10.5' font-weight='normal' text-anchor='middle' fill='#dfe7ef'>RouterOS CHR</text>
+<line x1='458.5' y1='118' x2='397.5' y2='300' stroke='#33475b' stroke-width='1.6'/>
+<text x='458.5' y='132' font-family='DejaVu Sans, Arial, sans-serif' font-size='9.5' font-weight='normal' text-anchor='middle' fill='#33475b'>N1</text>
+<line x1='491.8333333333333' y1='118' x2='397.5' y2='300' stroke='#33475b' stroke-width='1.6'/>
+<text x='491.8333333333333' y='132' font-family='DejaVu Sans, Arial, sans-serif' font-size='9.5' font-weight='normal' text-anchor='middle' fill='#33475b'>N2</text>
+<line x1='525.1666666666666' y1='118' x2='619.5' y2='300' stroke='#33475b' stroke-width='1.6'/>
+<text x='525.1666666666666' y='132' font-family='DejaVu Sans, Arial, sans-serif' font-size='9.5' font-weight='normal' text-anchor='middle' fill='#33475b'>N3</text>
+<line x1='558.5' y1='118' x2='508.5' y2='300' stroke='#33475b' stroke-width='1.6'/>
+<text x='558.5' y='132' font-family='DejaVu Sans, Arial, sans-serif' font-size='9.5' font-weight='normal' text-anchor='middle' fill='#33475b'>N4</text>
+<rect x='448.5' y='62' width='120' height='56' rx='9' fill='#33475b'/>
+<text x='508.5' y='86' font-family='DejaVu Sans, Arial, sans-serif' font-size='14' font-weight='bold' text-anchor='middle' fill='#ffffff'>mikrotik1</text>
+<text x='508.5' y='104' font-family='DejaVu Sans, Arial, sans-serif' font-size='10.5' font-weight='normal' text-anchor='middle' fill='#dfe7ef'>RouterOS CHR</text>
+<line x1='736.0' y1='118' x2='619.5' y2='300' stroke='#33475b' stroke-width='1.6'/>
+<text x='736.0' y='132' font-family='DejaVu Sans, Arial, sans-serif' font-size='9.5' font-weight='normal' text-anchor='middle' fill='#33475b'>N1</text>
+<line x1='761.0' y1='118' x2='619.5' y2='300' stroke='#33475b' stroke-width='1.6'/>
+<text x='761.0' y='132' font-family='DejaVu Sans, Arial, sans-serif' font-size='9.5' font-weight='normal' text-anchor='middle' fill='#33475b'>N2</text>
+<line x1='786.0' y1='118' x2='952.5' y2='300' stroke='#33475b' stroke-width='1.6'/>
+<text x='786.0' y='132' font-family='DejaVu Sans, Arial, sans-serif' font-size='9.5' font-weight='normal' text-anchor='middle' fill='#33475b'>N3</text>
+<line x1='811.0' y1='118' x2='730.5' y2='300' stroke='#33475b' stroke-width='1.6'/>
+<text x='811.0' y='132' font-family='DejaVu Sans, Arial, sans-serif' font-size='9.5' font-weight='normal' text-anchor='middle' fill='#33475b'>N4</text>
+<line x1='836.0' y1='118' x2='841.5' y2='300' stroke='#33475b' stroke-width='1.6'/>
+<text x='836.0' y='132' font-family='DejaVu Sans, Arial, sans-serif' font-size='9.5' font-weight='normal' text-anchor='middle' fill='#33475b'>N5</text>
+<rect x='726.0' y='62' width='120' height='56' rx='9' fill='#33475b'/>
+<text x='786.0' y='86' font-family='DejaVu Sans, Arial, sans-serif' font-size='14' font-weight='bold' text-anchor='middle' fill='#ffffff'>mikrotik2</text>
+<text x='786.0' y='104' font-family='DejaVu Sans, Arial, sans-serif' font-size='10.5' font-weight='normal' text-anchor='middle' fill='#dfe7ef'>RouterOS CHR</text>
+<line x1='998.0' y1='118' x2='952.5' y2='300' stroke='#33475b' stroke-width='1.6'/>
+<text x='998.0' y='132' font-family='DejaVu Sans, Arial, sans-serif' font-size='9.5' font-weight='normal' text-anchor='middle' fill='#33475b'>N1</text>
+<line x1='1031.3333333333333' y1='118' x2='952.5' y2='300' stroke='#33475b' stroke-width='1.6'/>
+<text x='1031.3333333333333' y='132' font-family='DejaVu Sans, Arial, sans-serif' font-size='9.5' font-weight='normal' text-anchor='middle' fill='#33475b'>N2</text>
+<line x1='1064.6666666666667' y1='118' x2='1063.5' y2='300' stroke='#33475b' stroke-width='1.6'/>
+<text x='1064.6666666666667' y='132' font-family='DejaVu Sans, Arial, sans-serif' font-size='9.5' font-weight='normal' text-anchor='middle' fill='#33475b'>N3</text>
+<line x1='1098.0' y1='118' x2='1174.5' y2='300' stroke='#33475b' stroke-width='1.6'/>
+<text x='1098.0' y='132' font-family='DejaVu Sans, Arial, sans-serif' font-size='9.5' font-weight='normal' text-anchor='middle' fill='#33475b'>N4</text>
+<rect x='988.0' y='62' width='120' height='56' rx='9' fill='#33475b'/>
+<text x='1048.0' y='86' font-family='DejaVu Sans, Arial, sans-serif' font-size='14' font-weight='bold' text-anchor='middle' fill='#ffffff'>mikrotik3</text>
+<text x='1048.0' y='104' font-family='DejaVu Sans, Arial, sans-serif' font-size='10.5' font-weight='normal' text-anchor='middle' fill='#dfe7ef'>RouterOS CHR</text>
+<rect x='14' y='300' width='101' height='44' rx='6' fill='#fbe3d6' stroke='#33475b' stroke-width='1.5'/>
+<text x='64.5' y='319' font-family='DejaVu Sans, Arial, sans-serif' font-size='12.5' font-weight='bold' text-anchor='middle' fill='#1d2430'>NAT</text>
+<text x='64.5' y='335' font-family='DejaVu Sans, Arial, sans-serif' font-size='10' font-weight='normal' text-anchor='middle' fill='#5b6675'>NAT VBox</text>
+<rect x='125' y='300' width='101' height='44' rx='6' fill='#d6e4f5' stroke='#33475b' stroke-width='1.5'/>
+<text x='175.5' y='319' font-family='DejaVu Sans, Arial, sans-serif' font-size='12.5' font-weight='bold' text-anchor='middle' fill='#1d2430'>dmz</text>
+<text x='175.5' y='335' font-family='DejaVu Sans, Arial, sans-serif' font-size='10' font-weight='normal' text-anchor='middle' fill='#5b6675'>intnet</text>
+<line x1='175.5' y1='344' x2='175.5' y2='372' stroke='#33475b' stroke-width='1.4'/>
+<rect x='129' y='372' width='93' height='24' rx='5' fill='#ffffff' stroke='#5b6675'/>
+<text x='175.5' y='388' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='middle' fill='#1d2430'>websrv</text>
+<rect x='236' y='300' width='101' height='44' rx='6' fill='#d6e4f5' stroke='#33475b' stroke-width='1.5'/>
+<text x='286.5' y='319' font-family='DejaVu Sans, Arial, sans-serif' font-size='12.5' font-weight='bold' text-anchor='middle' fill='#1d2430'>privada</text>
+<text x='286.5' y='335' font-family='DejaVu Sans, Arial, sans-serif' font-size='10' font-weight='normal' text-anchor='middle' fill='#5b6675'>intnet</text>
+<line x1='286.5' y1='344' x2='286.5' y2='372' stroke='#33475b' stroke-width='1.4'/>
+<rect x='240' y='372' width='93' height='24' rx='5' fill='#fff4d6' stroke='#5b6675'/>
+<text x='286.5' y='388' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='bold' text-anchor='middle' fill='#1d2430'>pve01</text>
+<line x1='286.5' y1='396' x2='286.5' y2='406' stroke='#33475b' stroke-width='1.4'/>
+<rect x='240' y='406' width='93' height='24' rx='5' fill='#ffffff' stroke='#5b6675'/>
+<text x='286.5' y='422' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='middle' fill='#1d2430'>dbsrv</text>
+<line x1='286.5' y1='430' x2='286.5' y2='440' stroke='#33475b' stroke-width='1.4'/>
+<rect x='240' y='440' width='93' height='24' rx='5' fill='#ffffff' stroke='#5b6675'/>
+<text x='286.5' y='456' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='middle' fill='#1d2430'>infosrv</text>
+<rect x='347' y='300' width='101' height='44' rx='6' fill='#e3e8ef' stroke='#33475b' stroke-width='1.5'/>
+<text x='397.5' y='319' font-family='DejaVu Sans, Arial, sans-serif' font-size='12.5' font-weight='bold' text-anchor='middle' fill='#1d2430'>r0-r1</text>
+<text x='397.5' y='335' font-family='DejaVu Sans, Arial, sans-serif' font-size='10' font-weight='normal' text-anchor='middle' fill='#5b6675'>intnet</text>
+<rect x='458' y='300' width='101' height='44' rx='6' fill='#d6e4f5' stroke='#33475b' stroke-width='1.5'/>
+<text x='508.5' y='319' font-family='DejaVu Sans, Arial, sans-serif' font-size='12.5' font-weight='bold' text-anchor='middle' fill='#1d2430'>pl0</text>
+<text x='508.5' y='335' font-family='DejaVu Sans, Arial, sans-serif' font-size='10' font-weight='normal' text-anchor='middle' fill='#5b6675'>intnet</text>
+<line x1='508.5' y1='344' x2='508.5' y2='372' stroke='#33475b' stroke-width='1.4'/>
+<rect x='462' y='372' width='93' height='24' rx='5' fill='#ffffff' stroke='#5b6675'/>
+<text x='508.5' y='388' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='middle' fill='#1d2430'>printer0</text>
+<line x1='508.5' y1='396' x2='508.5' y2='406' stroke='#33475b' stroke-width='1.4'/>
+<rect x='462' y='406' width='93' height='24' rx='5' fill='#ffffff' stroke='#5b6675'/>
+<text x='508.5' y='422' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='middle' fill='#1d2430'>expo1</text>
+<line x1='508.5' y1='430' x2='508.5' y2='440' stroke='#33475b' stroke-width='1.4'/>
+<rect x='462' y='440' width='93' height='24' rx='5' fill='#ffffff' stroke='#5b6675'/>
+<text x='508.5' y='456' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='middle' fill='#1d2430'>expo2</text>
+<line x1='508.5' y1='464' x2='508.5' y2='474' stroke='#33475b' stroke-width='1.4'/>
+<rect x='462' y='474' width='93' height='24' rx='5' fill='#ffffff' stroke='#5b6675'/>
+<text x='508.5' y='490' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='middle' fill='#1d2430'>expo3</text>
+<line x1='508.5' y1='498' x2='508.5' y2='508' stroke='#33475b' stroke-width='1.4'/>
+<rect x='462' y='508' width='93' height='24' rx='5' fill='#ffffff' stroke='#5b6675'/>
+<text x='508.5' y='524' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='middle' fill='#1d2430'>expo4</text>
+<line x1='508.5' y1='532' x2='508.5' y2='542' stroke='#33475b' stroke-width='1.4'/>
+<rect x='462' y='542' width='93' height='24' rx='5' fill='#ffffff' stroke='#5b6675'/>
+<text x='508.5' y='558' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='middle' fill='#1d2430'>conserge1</text>
+<line x1='508.5' y1='566' x2='508.5' y2='576' stroke='#33475b' stroke-width='1.4'/>
+<rect x='462' y='576' width='93' height='24' rx='5' fill='#ffffff' stroke='#5b6675'/>
+<text x='508.5' y='592' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='middle' fill='#1d2430'>conserge2</text>
+<rect x='569' y='300' width='101' height='44' rx='6' fill='#e3e8ef' stroke='#33475b' stroke-width='1.5'/>
+<text x='619.5' y='319' font-family='DejaVu Sans, Arial, sans-serif' font-size='12.5' font-weight='bold' text-anchor='middle' fill='#1d2430'>r1-r2</text>
+<text x='619.5' y='335' font-family='DejaVu Sans, Arial, sans-serif' font-size='10' font-weight='normal' text-anchor='middle' fill='#5b6675'>intnet</text>
+<rect x='680' y='300' width='101' height='44' rx='6' fill='#d6e4f5' stroke='#33475b' stroke-width='1.5'/>
+<text x='730.5' y='319' font-family='DejaVu Sans, Arial, sans-serif' font-size='12.5' font-weight='bold' text-anchor='middle' fill='#1d2430'>pl1</text>
+<text x='730.5' y='335' font-family='DejaVu Sans, Arial, sans-serif' font-size='10' font-weight='normal' text-anchor='middle' fill='#5b6675'>intnet</text>
+<line x1='730.5' y1='344' x2='730.5' y2='372' stroke='#33475b' stroke-width='1.4'/>
+<rect x='684' y='372' width='93' height='24' rx='5' fill='#ffffff' stroke='#5b6675'/>
+<text x='730.5' y='388' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='middle' fill='#1d2430'>printer1</text>
+<line x1='730.5' y1='396' x2='730.5' y2='406' stroke='#33475b' stroke-width='1.4'/>
+<rect x='684' y='406' width='93' height='24' rx='5' fill='#ffffff' stroke='#5b6675'/>
+<text x='730.5' y='422' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='middle' fill='#1d2430'>pc-pl1-01</text>
+<line x1='730.5' y1='430' x2='730.5' y2='440' stroke='#33475b' stroke-width='1.4'/>
+<rect x='684' y='440' width='93' height='24' rx='5' fill='#ffffff' stroke='#5b6675'/>
+<text x='730.5' y='456' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='middle' fill='#1d2430'>pc-pl1-02</text>
+<rect x='791' y='300' width='101' height='44' rx='6' fill='#d6e4f5' stroke='#33475b' stroke-width='1.5'/>
+<text x='841.5' y='319' font-family='DejaVu Sans, Arial, sans-serif' font-size='12.5' font-weight='bold' text-anchor='middle' fill='#1d2430'>pl2</text>
+<text x='841.5' y='335' font-family='DejaVu Sans, Arial, sans-serif' font-size='10' font-weight='normal' text-anchor='middle' fill='#5b6675'>intnet</text>
+<line x1='841.5' y1='344' x2='841.5' y2='372' stroke='#33475b' stroke-width='1.4'/>
+<rect x='795' y='372' width='93' height='24' rx='5' fill='#ffffff' stroke='#5b6675'/>
+<text x='841.5' y='388' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='middle' fill='#1d2430'>printer2</text>
+<line x1='841.5' y1='396' x2='841.5' y2='406' stroke='#33475b' stroke-width='1.4'/>
+<rect x='795' y='406' width='93' height='24' rx='5' fill='#ffffff' stroke='#5b6675'/>
+<text x='841.5' y='422' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='middle' fill='#1d2430'>pc-pl2-01</text>
+<line x1='841.5' y1='430' x2='841.5' y2='440' stroke='#33475b' stroke-width='1.4'/>
+<rect x='795' y='440' width='93' height='24' rx='5' fill='#ffffff' stroke='#5b6675'/>
+<text x='841.5' y='456' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='middle' fill='#1d2430'>pc-pl2-02</text>
+<rect x='902' y='300' width='101' height='44' rx='6' fill='#e3e8ef' stroke='#33475b' stroke-width='1.5'/>
+<text x='952.5' y='319' font-family='DejaVu Sans, Arial, sans-serif' font-size='12.5' font-weight='bold' text-anchor='middle' fill='#1d2430'>r2-r3</text>
+<text x='952.5' y='335' font-family='DejaVu Sans, Arial, sans-serif' font-size='10' font-weight='normal' text-anchor='middle' fill='#5b6675'>intnet</text>
+<rect x='1013' y='300' width='101' height='44' rx='6' fill='#d6e4f5' stroke='#33475b' stroke-width='1.5'/>
+<text x='1063.5' y='319' font-family='DejaVu Sans, Arial, sans-serif' font-size='12.5' font-weight='bold' text-anchor='middle' fill='#1d2430'>pl3</text>
+<text x='1063.5' y='335' font-family='DejaVu Sans, Arial, sans-serif' font-size='10' font-weight='normal' text-anchor='middle' fill='#5b6675'>intnet</text>
+<line x1='1063.5' y1='344' x2='1063.5' y2='372' stroke='#33475b' stroke-width='1.4'/>
+<rect x='1017' y='372' width='93' height='24' rx='5' fill='#ffffff' stroke='#5b6675'/>
+<text x='1063.5' y='388' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='middle' fill='#1d2430'>printer3</text>
+<line x1='1063.5' y1='396' x2='1063.5' y2='406' stroke='#33475b' stroke-width='1.4'/>
+<rect x='1017' y='406' width='93' height='24' rx='5' fill='#ffffff' stroke='#5b6675'/>
+<text x='1063.5' y='422' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='middle' fill='#1d2430'>pc-pl3-01</text>
+<line x1='1063.5' y1='430' x2='1063.5' y2='440' stroke='#33475b' stroke-width='1.4'/>
+<rect x='1017' y='440' width='93' height='24' rx='5' fill='#ffffff' stroke='#5b6675'/>
+<text x='1063.5' y='456' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='middle' fill='#1d2430'>pc-pl3-02</text>
+<rect x='1124' y='300' width='101' height='44' rx='6' fill='#d6e4f5' stroke='#33475b' stroke-width='1.5'/>
+<text x='1174.5' y='319' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='bold' text-anchor='middle' fill='#1d2430'>pl3-direccio</text>
+<text x='1174.5' y='335' font-family='DejaVu Sans, Arial, sans-serif' font-size='10' font-weight='normal' text-anchor='middle' fill='#5b6675'>intnet</text>
+<line x1='1174.5' y1='344' x2='1174.5' y2='372' stroke='#33475b' stroke-width='1.4'/>
+<rect x='1128' y='372' width='93' height='24' rx='5' fill='#ffffff' stroke='#5b6675'/>
+<text x='1174.5' y='388' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='middle' fill='#1d2430'>direccio1</text>
+<line x1='1174.5' y1='396' x2='1174.5' y2='406' stroke='#33475b' stroke-width='1.4'/>
+<rect x='1128' y='406' width='93' height='24' rx='5' fill='#ffffff' stroke='#5b6675'/>
+<text x='1174.5' y='422' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='middle' fill='#1d2430'>direccio2</text>
+<line x1='1174.5' y1='430' x2='1174.5' y2='440' stroke='#33475b' stroke-width='1.4'/>
+<rect x='1128' y='440' width='93' height='24' rx='5' fill='#ffffff' stroke='#5b6675'/>
+<text x='1174.5' y='456' font-family='DejaVu Sans, Arial, sans-serif' font-size='11' font-weight='normal' text-anchor='middle' fill='#1d2430'>direccio3</text>
+<text x='16' y='692' font-family='DejaVu Sans, Arial, sans-serif' font-size='10.5' font-weight='normal' text-anchor='start' fill='#3d4756'>N1..N5 = adaptadors de xarxa de cada router. Tots els equips tenen UNA sola NIC (NIC1) en mode xarxa interna; només mikrotik0 té NAT. NIC1 de mikrotik1-3 duplica la xarxa de la NIC2, sense IP (disseny de l&#x27;activitat 1).</text>
+</svg>
+</section>
+
+<section>
+<h2>Inventari d'equips</h2>
+<table><thead><tr><th>Equip</th><th>Origen</th><th>Xarxa interna</th><th>Adreçament</th><th>Recursos</th></tr></thead><tbody><tr><td>pve01</td><td>Proxmox VE 9.2 (ISO)</td><td>privada</td><td>10.25.0.133/26 estàtica</td><td>8192 MB · 4 vCPU · 64 GB · nested</td></tr><tr><td>dbsrv</td><td>Debian Server</td><td>privada</td><td>10.25.0.134 (DHCP)</td><td>1024 MB · 2 vCPU</td></tr><tr><td>infosrv</td><td>Debian Server</td><td>privada</td><td>10.25.0.135 (DHCP)</td><td>1024 MB · 2 vCPU</td></tr><tr><td>websrv</td><td>Debian Server</td><td>dmz</td><td>10.25.0.197 (DHCP)</td><td>1024 MB · 2 vCPU</td></tr><tr><td>printer0..3</td><td>Debian Server</td><td>pl0, pl1, pl2, pl3</td><td>10.25.n.65 (DHCP)</td><td>512 MB · 1 vCPU</td></tr><tr><td>expo1..4</td><td>Debian Desktop</td><td>pl0</td><td>10.25.0.33–36 (DHCP)</td><td>2048 MB · 2 vCPU</td></tr><tr><td>conserge1..2</td><td>Debian Desktop</td><td>pl0</td><td>DHCP</td><td>2048 MB · 2 vCPU</td></tr><tr><td>pc-pl1-01/02</td><td>Debian Desktop</td><td>pl1</td><td>DHCP</td><td>2048 MB · 2 vCPU</td></tr><tr><td>pc-pl2-01/02</td><td>Debian Desktop</td><td>pl2</td><td>DHCP</td><td>2048 MB · 2 vCPU</td></tr><tr><td>pc-pl3-01/02</td><td>Debian Desktop</td><td>pl3</td><td>DHCP</td><td>2048 MB · 2 vCPU</td></tr><tr><td>direccio1..3</td><td>Debian Desktop</td><td>pl3-direccio</td><td>DHCP</td><td>2048 MB · 2 vCPU</td></tr></tbody></table>
+<ul>
+<li>Els equips Debian són <b>clons enllaçats</b> de la instantània <i>base</i> dels templates tpl-debian-server / tpl-debian-desktop (grups VirtualBox /VirtualCorp/Servers, Printers i Desktops).</li>
+<li>Tots tenen una sola NIC en mode xarxa interna; cap equip té NAT. Només router0 (mikrotik0) té sortida NAT cap a l'exterior.</li>
+<li>pve01 s'instal·la des de la ISO de Proxmox VE 9.2-1 amb answer.toml; té la virtualització anidada activada (--nested-hw-virt on) i l'emmagatzematge ext4 + LVM-thin.</li>
+</ul>
+</section>
+</body></html>

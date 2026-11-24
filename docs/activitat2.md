@@ -325,7 +325,15 @@ cat artifacts/build/pve01/serial.log
 ## 9. Disseny de xarxa
 
 El PDF del disseny lògic i físic, adaptat a aquesta activitat, és a
-`docs/disseny-xarxa-del25.pdf`.
+`docs/disseny-xarxa-del25.pdf`. Conté el pla d'adreçament, el diagrama
+lògic (routers, subxarxes i equips), el diagrama físic (adaptadors de
+VirtualBox i xarxes internes) i l'inventari.
+
+Es genera a partir de `docs/src/gen_disseny.py`, que escriu
+`docs/src/disseny-xarxa-del25.html` (diagrames en SVG). Després, Chrome
+en mode headless el converteix a PDF (vegeu les ordres a la capçalera de
+l'script). Així el diagrama es pot actualitzar i regenerar quan canviï
+l'inventari.
 
 ## 10. Fitxers de l'activitat
 
