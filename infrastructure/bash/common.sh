@@ -132,3 +132,20 @@ wait_ssh() {
     log_error "Timeout: SSH no disponible a ${ip}:${port} després de ${max_wait}s."
     return 1
 }
+
+# ---------- pve01 (Proxmox VE) ----------
+# Adreçament fixat pel projecte (apartat 4.3): 10.xx.0.133 a la zona
+# privada 10.25.0.128/26; porta d'enllaç = router0 a la privada.
+PVE_VM_NAME="${PVE_VM_NAME:-pve01}"
+PVE_NET="${PVE_NET:-privada}"
+PVE_CIDR="${PVE_CIDR:-10.25.0.133/26}"
+PVE_GATEWAY="${PVE_GATEWAY:-10.25.0.129}"
+# Encara no hi ha DNS propi: es fa servir un resolutor públic (via NAT de
+# router0) fins que es desplegui el servei DNS de la delegació.
+PVE_DNS="${PVE_DNS:-1.1.1.1}"
+# MAC fixa (08:00:27 = VirtualBox; 25 = delegació; 01:33 = .133): permet
+# que answer.toml seleccioni la NIC sense dependre del nom d'interfície.
+PVE_MAC="${PVE_MAC:-080027250133}"
+# Una IP de cada router (la més propera a pve01) + una IP pública.
+PVE_PING_TARGETS="${PVE_PING_TARGETS:-router0=10.25.0.129 router1=10.25.0.226 router2=10.25.0.230 router3=10.25.0.234 internet=1.1.1.1}"
+PVE_INSTALL_TIMEOUT="${PVE_INSTALL_TIMEOUT:-3600}"

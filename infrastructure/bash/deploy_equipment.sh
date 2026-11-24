@@ -10,6 +10,8 @@
 #   deploy_equipment.sh --list            mostra l'inventari i l'estat de cada VM
 #
 # Inventari: configs/equipment.conf (nom, template, xarxa, RAM, CPU, grup, IP).
+# pve01 no és a l'inventari: el desplega deploy_pve.sh (ISO de Proxmox VE)
+# quan no s'indica cap nom o quan "pve01" és entre els noms.
 #
 # Per a cada equip:
 #   1. Clon ENLLAÇAT des de la instantània "base" del template: el disc
@@ -181,27 +183,55 @@ list_equipment() {
 }
 
 # ---------- Principal ----------
+mode=deploy
 case "${1:-}" in
-    --list)
+    --list)   mode=list;   shift ;;
+    --delete) mode=delete; shift ;;
+esac
+
+# Separa pve01 (instal·lació pròpia) dels clons de l'inventari.
+#   sense noms       -> tots els clons + pve01
+#   només "pve01"    -> només pve01
+#   noms sense pve01 -> només aquests clons
+with_pve=0 only_pve=0
+names=()
+for a in "$@"; do
+    if [[ "$a" == "$PVE_VM_NAME" ]]; then with_pve=1; else names+=("$a"); fi
+done
+(( $# == 0 )) && with_pve=1
+(( $# > 0 && ${#names[@]} == 0 )) && only_pve=1
+set -- "${names[@]}"
+
+case "$mode" in
+    list)
         list_equipment
+        vm_exists "$PVE_VM_NAME" && state="$(vm_state "$PVE_VM_NAME")" || state="(no creada)"
+        printf '%-12s %-8s %-13s %5s %4s %-9s %-13s %s\n' "$PVE_VM_NAME" proxmox \
+            "$PVE_NET" "${PVE_MEMORY:-8192}" "${PVE_CPUS:-4}" servers "${PVE_CIDR%/*}" "$state"
         exit 0
         ;;
-    --delete)
-        shift
-        while read -r name _; do
-            if vm_exists "$name"; then
-                log_info "Esborrant $name"
-                vm_delete "$name" </dev/null
-            fi
-        done < <(selected "$@")
+    delete)
+        if (( ! only_pve )); then
+            while read -r name _; do
+                if vm_exists "$name"; then
+                    log_info "Esborrant $name"
+                    vm_delete "$name" </dev/null
+                fi
+            done < <(selected "$@")
+        fi
+        if (( with_pve )); then "$SCRIPT_DIR/deploy_pve.sh" --delete; fi
         exit 0
         ;;
 esac
 
+if (( only_pve )); then
+    exec "$SCRIPT_DIR/deploy_pve.sh"
+fi
+
+deployed=()
 check_templates
 mkdir -p "$EQUIPMENT_SERIAL_DIR"
 
-deployed=()
 while read -r name role net ram cpus group ip; do
     # </dev/null: VBoxManage no ha de consumir l'entrada del bucle.
     create_clone "$name" "$role" "$net" "$ram" "$cpus" "$group" </dev/null
@@ -216,3 +246,7 @@ if [[ "$VERIFY" == "1" ]]; then
     fi
 fi
 log_ok "Desplegament d'equips completat (${#deployed[@]} màquines)."
+
+if (( with_pve )); then
+    "$SCRIPT_DIR/deploy_pve.sh"
+fi
