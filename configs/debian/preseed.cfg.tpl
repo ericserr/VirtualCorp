@@ -82,7 +82,7 @@ d-i grub-installer/bootdev string /dev/sda
 # dins la ISO, no s'han d'autoritzar manualment.
 d-i preseed/late_command string \
     cp -r /cdrom/vcorp /target/root/vcorp-install; \
-    in-target /bin/bash /root/vcorp-install/late.sh @@TEMPLATE_ROLE@@ @@DOMAIN@@; \
+    in-target /bin/bash /root/vcorp-install/late.sh @@TEMPLATE_ROLE@@ @@DOMAIN@@ @@KEYMAP@@; \
     rm -rf /target/root/vcorp-install
 
 # ---------- Final ----------

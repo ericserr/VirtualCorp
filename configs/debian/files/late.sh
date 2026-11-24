@@ -3,13 +3,14 @@
 # VirtualCorp - Personalització del sistema instal·lat
 # ============================================================
 # S'executa DINS del sistema instal·lat (in-target) al final de la
-# instal·lació desatesa. Rep el rol (server | desktop) i el domini DNS.
-# Els fitxers són a /root/vcorp-install (copiats de /cdrom/vcorp).
+# instal·lació desatesa. Rep el rol (server | desktop), el domini DNS i
+# el teclat. Els fitxers són a /root/vcorp-install (copiats de /cdrom/vcorp).
 # ============================================================
 set -euo pipefail
 
 ROLE="${1:-server}"
 DOMAIN="${2:-}"
+KEYMAP="${3:-es}"
 SRC=/root/vcorp-install
 
 # ---------- Claus SSH autoritzades (professor + alumne) ----------
@@ -42,6 +43,16 @@ systemctl enable vcorp-firstboot.service vcorp-ready.service
 
 # ---------- Escriptori ----------
 if [[ "$ROLE" == "desktop" ]]; then
+    # Sense paquets recomanats no es crea /etc/default/keyboard i X (i la
+    # pantalla d'inici SDDM) arrenca amb el teclat "us". Es fixa aquí.
+    install -d -m 0755 /etc/X11/xorg.conf.d
+    cat > /etc/X11/xorg.conf.d/00-keyboard.conf <<XKB
+Section "InputClass"
+    Identifier "system-keyboard"
+    MatchIsKeyboard "on"
+    Option "XkbLayout" "${KEYMAP}"
+EndSection
+XKB
     systemctl set-default graphical.target
     systemctl enable sddm.service || true
 else
