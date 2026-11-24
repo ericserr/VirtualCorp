@@ -19,6 +19,7 @@ BOOTSTRAP_DIR := $(PROJECT_ROOT)/automation/scripts/bootstrap
 
 .PHONY: help deploy-routers delete-routers reset-routers reset_routers ssh-keys routeros-box
 .PHONY: check_host download_isos create_templates delete_templates
+.PHONY: deploy_equipment delete_equipment list_equipment
 
 help:
 	@printf '%s\n' \
@@ -33,7 +34,10 @@ help:
 	  '  check_host        Comprova VT-x, RAM, disc i eines de l'"'"'amfitrió' \
 	  '  download_isos     Descarrega i verifica (SHA256) les ISO fixades' \
 	  '  create_templates  Crea els templates Debian (ROLE=server|desktop, FORCE=1 per refer-los)' \
-	  '  delete_templates  Esborra els templates (falla si tenen clons enllaçats)'
+	  '  delete_templates  Esborra els templates (falla si tenen clons enllaçats)' \
+	  '  deploy_equipment  Desplega els equips (clons enllaçats) i pve01 (VMS="a b", FORCE=1, VERIFY=0)' \
+	  '  delete_equipment  Esborra els equips desplegats (VMS="a b" per limitar-ho)' \
+	  '  list_equipment    Mostra l'"'"'inventari i l'"'"'estat de cada equip'
 
 deploy-routers:
 	"$(BASH_DIR)/deploy_routers.sh"
@@ -69,3 +73,12 @@ create_templates: download_isos
 
 delete_templates:
 	"$(BASH_DIR)/create_templates.sh" --delete $(ROLE)
+
+deploy_equipment:
+	FORCE="$(FORCE)" VERIFY="$(or $(VERIFY),1)" "$(BASH_DIR)/deploy_equipment.sh" $(VMS)
+
+delete_equipment:
+	"$(BASH_DIR)/deploy_equipment.sh" --delete $(VMS)
+
+list_equipment:
+	"$(BASH_DIR)/deploy_equipment.sh" --list
