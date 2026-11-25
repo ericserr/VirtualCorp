@@ -1,93 +1,133 @@
-# Project components
+# Components del projecte
 
-This page describes the repository's current folders and the files used by the
-active router deployment workflow. The lab uses MikroTik RouterOS CHR virtual
-machines in VirtualBox.
+Aquesta pàgina descriu les carpetes del repositori i la funció de cada fitxer.
+Cobreix el desplegament dels routers (activitat 1, MikroTik RouterOS CHR) i el
+dels templates Debian, els equips i Proxmox VE (activitat 2). El procediment
+detallat i les decisions de disseny de la segona part són a
+[activitat2.md](activitat2.md).
 
-## Folder structure
+## Estructura de carpetes
 
 ```text
 .
 ├── artifacts/
+│   ├── build/            (generada, no versionada)
 │   └── images/
-│       └── chr/
+│       ├── chr/
+│       └── iso/          (generada, no versionada)
 ├── automation/
 │   ├── ansible/
 │   └── scripts/
 │       └── bootstrap/
 ├── configs/
+│   ├── debian/
+│   │   └── files/
+│   ├── proxmox/
 │   └── ssh/
 ├── docs/
+│   └── src/
 └── infrastructure/
     ├── bash/
     └── terraform/
 ```
 
-| Folder | Purpose |
+| Carpeta | Funció |
 | --- | --- |
-| `artifacts/images/chr/` | Holds the downloaded RouterOS CHR disk image and other local generated image files. Generated files are ignored by Git; `.gitkeep` preserves the directory when outputs are absent. |
-| `automation/ansible/` | Reserved for Ansible automation. It currently contains only `.gitkeep`, with no playbooks or inventory files. |
-| `automation/scripts/bootstrap/` | Bootstrap scripts for initial configuration of the virtual environment (before Ansible can be applied). |
-| `configs/ssh/` | Public SSH keys used by the bootstrap scripts and router accounts. Private keys are stored locally, usually in `~/.ssh`. |
-| `docs/` | Project documentation and the assignment statement. |
-| `infrastructure/bash/` | Bash scripts that create VirtualBox routers, connect their network interfaces, and bootstrap RouterOS. |
-| `infrastructure/terraform/` | Reserved for Terraform configuration. It currently contains only `.gitkeep`, with no Terraform configuration files. |
+| `artifacts/images/chr/` | Imatge de disc de RouterOS CHR descarregada. Git n'ignora el contingut; `.gitkeep` conserva la carpeta. |
+| `artifacts/images/iso/` | ISO de Debian i de Proxmox VE, descarregades i verificades. Ignorada per Git. |
+| `artifacts/build/` | Fitxers generats: ISO desateses, registres del port sèrie i eines extretes. Ignorada per Git. |
+| `automation/ansible/` | Reservada per a Ansible. De moment només conté `.gitkeep`. |
+| `automation/scripts/bootstrap/` | Scripts de preparació inicial de l'entorn. |
+| `configs/` | Versions fixades i inventari d'equips. |
+| `configs/debian/` | Instal·lació desatesa de Debian i serveis propis dels templates. |
+| `configs/proxmox/` | Instal·lació desatesa de Proxmox VE. |
+| `configs/ssh/` | Claus SSH públiques. Les privades es guarden fora del repositori, normalment a `~/.ssh`. |
+| `docs/` | Documentació del projecte i enunciat. |
+| `docs/src/` | Fonts amb què es genera el PDF del disseny de xarxa. |
+| `infrastructure/bash/` | Scripts que creen les màquines virtuals, les connecten i les configuren. |
+| `infrastructure/terraform/` | Reservada per a Terraform. De moment només conté `.gitkeep`. |
 
-## Main files
+## Fitxers principals
 
-### Repository root
+### Arrel del repositori
 
-| File | Functionality |
+| Fitxer | Funció |
 | --- | --- |
-| `Makefile` | Provides the help, router deployment, deletion, reset, and SSH-key targets used by the setup workflow. It loads local settings from `.env`. |
-| `.env.example` | Example Make configuration for project paths, SSH key locations, RouterOS image settings, and VirtualBox groups. Copy it to `.env` and adjust it for the local machine. |
-| `.gitignore` | Excludes local settings, private credentials, generated images, VirtualBox data, and temporary files from Git. |
-| `readme.md` | Project overview, prerequisites, setup steps, and a basic router connectivity check. |
+| `Makefile` | Punt d'entrada de tots els processos. Carrega `.env` i `configs/versions.env`. |
+| `.env.example` | Exemple de configuració local: camins, claus, grups de VirtualBox, recursos de pve01 i contrasenyes (aquestes, només al `.env`). Cal copiar-lo a `.env`. |
+| `.gitignore` | Exclou la configuració local, les credencials, les imatges i els fitxers generats. |
+| `readme.md` | Presentació, requisits, posada en marxa dels routers i prova de connectivitat. |
 
 ### `automation/scripts/bootstrap/`
 
-| File | Functionality |
+| Fitxer | Funció |
 | --- | --- |
-| `create_ssh_keys.sh` | Generates auditor, sysadmin, and MikroTik-compatible SSH key pairs. Private keys stay in the local SSH directory; public keys are copied to `configs/ssh/`. |
-| `create_mikrotik_box.sh` | Legacy template-packaging helper. It downloads a CHR image if needed, configures a temporary RouterOS VM, and packages it. The active router deployment workflow does not use this helper. |
+| `create_ssh_keys.sh` | Genera les claus d'auditor, de sysadmin i la compatible amb MikroTik. Les públiques es copien a `configs/ssh/`. |
+| `create_mikrotik_box.sh` | Utilitat antiga per empaquetar una imatge RouterOS. El desplegament actual no la fa servir. |
 
-### `automation/ansible/` and `infrastructure/terraform/`
+### `configs/`
 
-Each directory currently contains only a `.gitkeep` placeholder. No Ansible playbooks or Terraform configuration files are present yet.
-
-### `configs/ssh/`
-
-| File | Functionality |
+| Fitxer | Funció |
 | --- | --- |
-| `vcorp_auditor.pub` | Public key for the auditor account. |
-| `vcorp_mikrotik.pub` | Public key using the MikroTik-compatible key format. |
-| `vcorp_sysadmin.pub` | Public key for the sysadmin account and router bootstrap. |
+| `versions.env` | Versions, URL i SHA256 fixats de Debian, de Proxmox VE i de l'assistent d'instal·lació. El llegeixen el `Makefile` i els scripts. |
+| `equipment.conf` | Inventari dels 22 equips: nom, template, xarxa interna, RAM, CPU, grup i IP prevista. |
+| `debian/preseed.cfg.tpl` | Plantilla de respostes de l'instal·lador de Debian. |
+| `debian/files/late.sh` | Personalitza el sistema al final de la instal·lació: claus autoritzades, `sshd`, teclat i serveis propis. |
+| `debian/files/vcorp-firstboot.sh`, `.service` | En arrencar, regenera les claus SSH de host si falten i fixa el hostname a partir del número de sèrie DMI. |
+| `debian/files/vcorp-ready.service` | Escriu `VCORP-READY <hostname>` al port sèrie quan SSH és actiu. |
+| `debian/files/vcorp-seal.sh` | Segella el template: esborra les claus de host, el `machine-id`, les concessions DHCP i els registres. |
+| `proxmox/answer.toml.tpl` | Plantilla de respostes de l'instal·lador de Proxmox VE. |
+| `proxmox/first-boot.sh` | Comprova KVM i la connectivitat des de pve01 i escriu `PVE-READY` al port sèrie. |
+| `ssh/vcorp_auditor.pub` | Clau pública del professor (auditor). |
+| `ssh/vcorp_mikrotik.pub` | Clau pública en el format compatible amb MikroTik. |
+| `ssh/vcorp_sysadmin.pub` | Clau pública de l'administrador (clau personal). |
 
 ### `infrastructure/bash/`
 
-| File | Functionality |
+| Fitxer | Funció |
 | --- | --- |
-| `common.sh` | Sets shared VirtualBox, RouterOS, path, and key settings; defines logging helpers and an SSH availability check. |
-| `router_base.sh` | Provides functions to download the CHR image, create and configure router VMs and network interfaces, bootstrap RouterOS over SSH, and apply router configuration. |
-| `deploy_routers.sh` | Defines the four lab routers (`mikrotik0` through `mikrotik3`), their internal networks, IP addresses, gateways, and NAT settings, then creates them. |
-| `del_vbox_group.sh` | Deletes VirtualBox VMs in a selected group and its subgroups. It supports selecting the router group or the root group. |
+| `common.sh` | Variables compartides (VirtualBox, camins, grups, domini), funcions de registre i espera de SSH. |
+| `router_base.sh` | Funcions per crear els routers, connectar-ne les interfícies i configurar RouterOS. |
+| `deploy_routers.sh` | Defineix i crea els quatre routers (`mikrotik0`–`mikrotik3`). |
+| `del_vbox_group.sh` | Esborra les VM d'un grup de VirtualBox i dels seus subgrups. |
+| `check_host.sh` | Comprova que l'amfitrió compleix els requisits de l'activitat 2. |
+| `iso_lib.sh` | Funcions per descarregar i verificar ISO i per generar la de Debian desatesa. |
+| `download_isos.sh` | Descarrega i verifica les ISO fixades (`debian`, `pve` o `all`). |
+| `template_base.sh` | Paquets de cada template i funcions per generar-ne el preseed i la ISO. |
+| `create_templates.sh` | Crea, valida i segella `tpl-debian-server` i `tpl-debian-desktop`. |
+| `vm_lib.sh` | Funcions genèriques de VirtualBox: estat, espera, apagada, esborrat i SSH. |
+| `deploy_equipment.sh` | Crea i comprova els clons enllaçats i orquestra la instal·lació de pve01. |
+| `deploy_pve.sh` | Instal·la Proxmox VE a `pve01` de manera desatesa. |
 
 ### `docs/`
 
-| File | Functionality |
+| Fitxer | Funció |
 | --- | --- |
-| `components.md` | Describes the repository structure and the purpose of its main files. |
-| `statement.html` | Contains the assignment scenario, requirements, and project details. |
+| `components.md` | Aquest document. |
+| `activitat2.md` | Procediment, decisions, comprovacions i incidències de l'activitat 2. |
+| `disseny-xarxa-del25.pdf` | Disseny lògic i físic de la xarxa de la delegació 25. |
+| `src/gen_disseny.py`, `src/disseny-xarxa-del25.html` | Script que genera el disseny i HTML resultant, d'on surt el PDF. |
+| `statement.html` | Escenari, requisits i detalls del projecte. |
 
-### `artifacts/images/chr/`
+## Targets de `make`
 
-| File | Functionality |
+| Target | Funció |
 | --- | --- |
-| `.gitkeep` | Keeps the output directory in Git when it has no generated images. Downloaded disk images and other generated files are local outputs and are not committed. |
+| `ssh-keys` | Genera les claus SSH del projecte. |
+| `deploy-routers`, `delete-routers`, `reset-routers` | Crea, esborra o recrea els routers. |
+| `routeros-box` | Executa la utilitat antiga d'empaquetament. |
+| `check_host` | Comprova l'amfitrió. |
+| `download_isos` | Descarrega i verifica les ISO. |
+| `create_templates`, `delete_templates` | Crea o esborra els templates Debian (`ROLE=`; `FORCE=1` per refer-los). |
+| `deploy_equipment`, `delete_equipment` | Desplega o esborra els equips i pve01 (`VMS="a b"`; `FORCE=1` i `VERIFY=0` en desplegar). |
+| `list_equipment` | Mostra l'inventari i l'estat de cada màquina. |
 
-## Typical workflow
+## Flux de treball habitual
 
-1. Copy `.env.example` to `.env` and customize local paths if needed.
-2. Run `make ssh-keys` to create the SSH key pairs.
-3. Run `make deploy-routers` to download the CHR image when needed and create the lab routers.
-4. Use `make delete-routers` or `make reset-routers` to remove or recreate the router group.
+1. Copiar `.env.example` a `.env`, adaptar-lo i definir-hi les contrasenyes.
+2. `make ssh-keys`, si les claus encara no existeixen.
+3. `make check_host` per comprovar l'amfitrió.
+4. `make deploy-routers` per crear els routers.
+5. `make create_templates` (descarrega i verifica abans les ISO).
+6. `make deploy_equipment` per desplegar els equips i pve01.
+7. `make list_equipment` per revisar el resultat.
