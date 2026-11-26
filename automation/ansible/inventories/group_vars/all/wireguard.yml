@@ -1,0 +1,42 @@
+---
+# Valors NO secrets de la VPN WireGuard (activitat 3, apartat 3).
+# Les claus privades i el fitxer del client es generen a artifacts/vpn,
+# que Git ignora; aquí no hi ha cap secret.
+
+# Interfície i port del servidor a mikrotik0
+wg_interface: wg-vpn
+wg_listen_port: 51820
+
+# Adreçament del túnel: 10.25.10.0/24 no se solapa amb 10.25.0.0-10.25.3.255
+# (delegació 25) ni amb la xarxa del client (172.16.0.0/21).
+wg_tunnel_prefix: 10.25.10.0/24
+wg_tunnel_prefix_len: 24
+wg_server_address: 10.25.10.1
+wg_client_name: sysadmin-portatil
+wg_client_address: 10.25.10.2
+
+# Endpoint que fa servir el client: el reenviament UDP de VirtualBox
+# (NIC1, NAT) de 127.0.0.1:51820 a la NIC1 de mikrotik0.
+wg_endpoint_host: 127.0.0.1
+wg_endpoint_port: 51820
+wg_vbox_vm: mikrotik0
+wg_vbox_nat_nic: 1
+wg_vbox_natpf_name: wireguard
+
+# Xarxes autoritzades (túnel dividit). pl3-direccio (10.25.3.128/25)
+# queda fora expressament: és la xarxa aïllada de direcció.
+wg_authorized_networks:
+  - { name: privada, prefix: 10.25.0.128/26 }
+  - { name: dmz, prefix: 10.25.0.192/27 }
+  - { name: pl0, prefix: 10.25.0.0/25 }
+  - { name: pl1, prefix: 10.25.1.0/24 }
+  - { name: pl2, prefix: 10.25.2.0/24 }
+  - { name: pl3, prefix: 10.25.3.0/25 }
+
+# Noms dels objectes RouterOS (el comentari permet trobar-los i no duplicar-los)
+wg_comment: vcorp-wg
+wg_address_list: vcorp-vpn-autoritzades
+
+# Fitxers del client al node de control (directori ignorat per Git)
+wg_client_dir: "{{ (playbook_dir ~ '/../../../artifacts/vpn') | realpath }}"
+wg_client_ifname: wg-vcorp

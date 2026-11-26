@@ -1,0 +1,10 @@
+---
+# Ordre: primer les claus del client (keys.yml); el fitxer de configuració
+# (config.yml) necessita la clau pública del servidor, per això el playbook
+# crida cada part per separat amb tasks_from.
+- name: Generar o llegir les claus del client
+  ansible.builtin.import_tasks: keys.yml
+
+- name: Escriure el fitxer de configuració del client
+  ansible.builtin.include_tasks: config.yml
+  when: wg_server_public_key is defined

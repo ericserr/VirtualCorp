@@ -1,0 +1,154 @@
+---
+# Configura el servidor WireGuard a mikrotik0 (RouterOS 7) amb
+# community.routeros.command sobre network_cli. Cada ordre és un petit script
+# RouterOS que comprova l'objecte abans de crear-lo o corregir-lo i escriu
+# CHANGED o OK; així la segona execució no duplica res.
+
+- name: Comprovar que es coneix la clau pública del client
+  ansible.builtin.assert:
+    that:
+      - wg_client_public_key is defined
+      - wg_client_public_key | length == 44
+    fail_msg: "Falta la clau pública del client (executa abans wireguard_client/keys.yml)."
+
+# --- Reenviament UDP de VirtualBox (tasca local) --------------------------
+- name: Consultar l'estat i els reenviaments de la VM del servidor
+  ansible.builtin.command:
+    argv: ["{{ vboxmanage_bin | default('VBoxManage') }}", showvminfo, "{{ wg_vbox_vm }}", --machinereadable]
+  register: wg_vm_info
+  changed_when: false
+  delegate_to: localhost
+
+- name: Calcular la regla de reenviament desitjada
+  ansible.builtin.set_fact:
+    wg_natpf_rule: "{{ wg_vbox_natpf_name }},udp,{{ wg_endpoint_host }},{{ wg_endpoint_port }},,{{ wg_listen_port }}"
+    wg_vm_running: "{{ 'VMState=\"running\"' in wg_vm_info.stdout }}"
+    wg_natpf_present: "{{ wg_vm_info.stdout is search('Forwarding\\(\\d+\\)=\"' ~ wg_vbox_natpf_name ~ ',') }}"
+
+- name: Esborrar una regla de reenviament amb el mateix nom però diferent
+  ansible.builtin.command:
+    argv: "{{ ([vboxmanage_bin | default('VBoxManage'), 'controlvm', wg_vbox_vm, 'natpf' ~ wg_vbox_nat_nic, 'delete', wg_vbox_natpf_name])
+              if wg_vm_running else
+              ([vboxmanage_bin | default('VBoxManage'), 'modifyvm', wg_vbox_vm, '--natpf' ~ wg_vbox_nat_nic, 'delete', wg_vbox_natpf_name]) }}"
+  when:
+    - wg_natpf_present
+    - ('="' ~ wg_natpf_rule ~ '"') not in wg_vm_info.stdout
+  register: wg_natpf_deleted
+  changed_when: true
+  delegate_to: localhost
+
+- name: Crear el reenviament UDP de VirtualBox cap a WireGuard
+  ansible.builtin.command:
+    argv: "{{ ([vboxmanage_bin | default('VBoxManage'), 'controlvm', wg_vbox_vm, 'natpf' ~ wg_vbox_nat_nic, wg_natpf_rule])
+              if wg_vm_running else
+              ([vboxmanage_bin | default('VBoxManage'), 'modifyvm', wg_vbox_vm, '--natpf' ~ wg_vbox_nat_nic, wg_natpf_rule]) }}"
+  when: (not wg_natpf_present) or (wg_natpf_deleted is changed)
+  changed_when: true
+  delegate_to: localhost
+
+# --- Interfície WireGuard ---------------------------------------------------
+- name: Crear la interfície WireGuard o corregir-ne el port
+  community.routeros.command:
+    commands:
+      - >-
+        { :local i [/interface wireguard find where name="{{ wg_interface }}"];
+        :if ([:len $i] = 0) do={
+        /interface wireguard add name="{{ wg_interface }}" listen-port={{ wg_listen_port }} comment="{{ wg_comment }}";
+        :put "CHANGED" } else={
+        :if ([/interface wireguard get ($i->0) listen-port] != {{ wg_listen_port }}) do={
+        /interface wireguard set ($i->0) listen-port={{ wg_listen_port }}; :put "CHANGED" } else={ :put "OK" } } }
+  register: wg_iface_result
+  changed_when: "'CHANGED' in wg_iface_result.stdout[0]"
+
+- name: Llegir la clau pública del servidor (RouterOS genera la privada)
+  community.routeros.command:
+    commands:
+      - ':put [/interface wireguard get [find where name="{{ wg_interface }}"] public-key]'
+  register: wg_server_pubkey_cmd
+  changed_when: false
+
+- name: Desar la clau pública del servidor per al fitxer del client
+  ansible.builtin.set_fact:
+    wg_server_public_key: "{{ wg_server_pubkey_cmd.stdout[0] | trim }}"
+
+# --- Adreça del túnel --------------------------------------------------------
+- name: Assignar l'adreça del túnel a la interfície
+  community.routeros.command:
+    commands:
+      - >-
+        { :local c "{{ wg_comment }}: tunel";
+        :if ([:len [/ip address find where comment=$c address="{{ wg_server_address }}/{{ wg_tunnel_prefix_len }}" interface="{{ wg_interface }}"]] = 0) do={
+        /ip address remove [/ip address find where comment=$c];
+        /ip address add address="{{ wg_server_address }}/{{ wg_tunnel_prefix_len }}" interface="{{ wg_interface }}" comment=$c;
+        :put "CHANGED" } else={ :put "OK" } }
+  register: wg_addr_result
+  changed_when: "'CHANGED' in wg_addr_result.stdout[0]"
+
+# --- Peer del client ---------------------------------------------------------
+- name: Registrar el client com a peer amb la seva clau pública i adreça
+  community.routeros.command:
+    commands:
+      - >-
+        { :local c "{{ wg_comment }}: {{ wg_client_name }}";
+        :local p [/interface wireguard peers find where comment=$c];
+        :if ([:len $p] = 0) do={
+        /interface wireguard peers add interface="{{ wg_interface }}" public-key="{{ wg_client_public_key }}" allowed-address={{ wg_client_address }}/32 comment=$c;
+        :put "CHANGED" } else={
+        :if ([:len [/interface wireguard peers find where comment=$c interface="{{ wg_interface }}" public-key="{{ wg_client_public_key }}"]] = 0
+        || [:tostr [/interface wireguard peers get ($p->0) allowed-address]] != "{{ wg_client_address }}/32") do={
+        /interface wireguard peers set ($p->0) interface="{{ wg_interface }}" public-key="{{ wg_client_public_key }}" allowed-address={{ wg_client_address }}/32;
+        :put "CHANGED" } else={ :put "OK" } } }
+  register: wg_peer_result
+  changed_when: "'CHANGED' in wg_peer_result.stdout[0]"
+
+# --- Llista d'adreces autoritzades --------------------------------------------
+- name: Afegir cada xarxa autoritzada a la llista d'adreces
+  community.routeros.command:
+    commands:
+      - >-
+        { :local c "{{ wg_comment }}: {{ item.name }}";
+        :if ([:len [/ip firewall address-list find where comment=$c list="{{ wg_address_list }}" address="{{ item.prefix }}"]] = 0) do={
+        /ip firewall address-list remove [/ip firewall address-list find where comment=$c];
+        /ip firewall address-list add list="{{ wg_address_list }}" address="{{ item.prefix }}" comment=$c;
+        :put "CHANGED" } else={ :put "OK" } }
+  loop: "{{ wg_authorized_networks }}"
+  loop_control:
+    label: "{{ item.name }} {{ item.prefix }}"
+  register: wg_list_result
+  changed_when: "'CHANGED' in wg_list_result.stdout[0]"
+
+- name: Llegir les entrades actuals de la llista d'adreces
+  community.routeros.command:
+    commands:
+      - ':foreach e in=[/ip firewall address-list find where list="{{ wg_address_list }}"] do={ :put [/ip firewall address-list get $e address] }'
+  register: wg_list_current
+  changed_when: false
+
+- name: Treure de la llista les xarxes que ja no estan autoritzades
+  community.routeros.command:
+    commands:
+      - '/ip firewall address-list remove [find where list="{{ wg_address_list }}" address="{{ item }}"]'
+  loop: "{{ wg_list_current.stdout_lines[0] | map('trim') | select | difference(wg_authorized_networks | map(attribute='prefix')) }}"
+  changed_when: true
+
+# --- Tallafoc: input i forward -----------------------------------------------
+- name: Garantir les regles de tallafoc de la VPN
+  community.routeros.command:
+    commands:
+      - >-
+        { :local c "{{ item.comment }}";
+        :if ([:len [/ip firewall filter find where comment=$c {{ item.spec }}]] = 0) do={
+        /ip firewall filter remove [/ip firewall filter find where comment=$c];
+        {% if item.place == 'top' %}
+        :local f [/ip firewall filter find];
+        :if ([:len $f] > 0) do={ /ip firewall filter add {{ item.spec }} comment=$c place-before=($f->0) }
+        else={ /ip firewall filter add {{ item.spec }} comment=$c };
+        {% else %}
+        /ip firewall filter add {{ item.spec }} comment=$c;
+        {% endif %}
+        :put "CHANGED" } else={ :put "OK" } }
+  loop: "{{ wg_firewall_rules }}"
+  loop_control:
+    label: "{{ item.comment }}"
+  register: wg_fw_result
+  changed_when: "'CHANGED' in wg_fw_result.stdout[0]"

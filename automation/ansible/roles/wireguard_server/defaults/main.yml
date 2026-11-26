@@ -1,0 +1,14 @@
+---
+# Regles de tallafoc que el rol garanteix a mikrotik0. Es deriven de les
+# variables de group_vars/all/wireguard.yml; cada regla s'identifica pel
+# comentari. place: top (abans de totes), end (al final).
+wg_firewall_rules:
+  - comment: "{{ wg_comment }}: input UDP {{ wg_listen_port }}"
+    spec: 'chain="input" protocol="udp" dst-port="{{ wg_listen_port }}" action="accept"'
+    place: top
+  - comment: "{{ wg_comment }}: forward VPN a xarxes autoritzades"
+    spec: 'chain="forward" in-interface="{{ wg_interface }}" dst-address-list="{{ wg_address_list }}" action="accept"'
+    place: top
+  - comment: "{{ wg_comment }}: forward VPN resta descartat"
+    spec: 'chain="forward" in-interface="{{ wg_interface }}" action="drop"'
+    place: end

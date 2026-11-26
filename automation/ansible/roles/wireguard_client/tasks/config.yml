@@ -1,0 +1,22 @@
+---
+- name: Comprovar que es coneix la clau pública del servidor
+  ansible.builtin.assert:
+    that:
+      - wg_server_public_key is defined
+      - wg_server_public_key | length == 44
+    fail_msg: "Falta la clau pública del servidor (executa abans wireguard_server)."
+
+- name: Llegir la clau privada del client
+  ansible.builtin.slurp:
+    src: "{{ wg_client_dir }}/{{ wg_client_name }}.key"
+  register: wg_client_key_file
+  no_log: true
+
+- name: Escriure el fitxer del client amb permisos 0600
+  ansible.builtin.template:
+    src: client.conf.j2
+    dest: "{{ wg_client_dir }}/{{ wg_client_ifname }}.conf"
+    mode: "0600"
+  vars:
+    wg_client_private_key: "{{ wg_client_key_file.content | b64decode | trim }}"
+  no_log: true

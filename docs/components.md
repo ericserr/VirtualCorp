@@ -2,9 +2,10 @@
 
 Aquesta pàgina descriu les carpetes del repositori i la funció de cada fitxer.
 Cobreix el desplegament dels routers (activitat 1, MikroTik RouterOS CHR) i el
-dels templates Debian, els equips i Proxmox VE (activitat 2). El procediment
-detallat i les decisions de disseny de la segona part són a
-[activitat2.md](activitat2.md).
+dels templates Debian, els equips i Proxmox VE (activitat 2), i també
+l'automatització amb Ansible i la VPN WireGuard (activitat 3). El procediment
+detallat i les decisions de disseny són a [activitat2.md](activitat2.md) i
+[activitat3.md](activitat3.md).
 
 ## Estructura de carpetes
 
@@ -36,7 +37,8 @@ detallat i les decisions de disseny de la segona part són a
 | `artifacts/images/chr/` | Imatge de disc de RouterOS CHR descarregada. Git n'ignora el contingut; `.gitkeep` conserva la carpeta. |
 | `artifacts/images/iso/` | ISO de Debian i de Proxmox VE, descarregades i verificades. Ignorada per Git. |
 | `artifacts/build/` | Fitxers generats: ISO desateses, registres del port sèrie i eines extretes. Ignorada per Git. |
-| `automation/ansible/` | Reservada per a Ansible. De moment només conté `.gitkeep`. |
+| `automation/ansible/` | Inventari, rols i playbooks d'Ansible: engegar i aturar els routers i configurar la VPN WireGuard (activitat 3). |
+| `artifacts/vpn/` | Claus i fitxer `.conf` del client WireGuard, generats per Ansible amb permisos `0700`/`0600`. Ignorada per Git. |
 | `automation/scripts/bootstrap/` | Scripts de preparació inicial de l'entorn. |
 | `configs/` | Versions fixades i inventari d'equips. |
 | `configs/debian/` | Instal·lació desatesa de Debian i serveis propis dels templates. |
@@ -105,6 +107,7 @@ detallat i les decisions de disseny de la segona part són a
 | --- | --- |
 | `components.md` | Aquest document. |
 | `activitat2.md` | Procediment, decisions, comprovacions i incidències de l'activitat 2. |
+| `activitat3.md` | Ansible (start/stop dels routers) i VPN WireGuard: variables d'adreçament, tallafoc i proves. |
 | `disseny-xarxa-del25.pdf` | Disseny lògic i físic de la xarxa de la delegació 25. |
 | `src/gen_disseny.py`, `src/disseny-xarxa-del25.html` | Script que genera el disseny i HTML resultant, d'on surt el PDF. |
 | `statement.html` | Escenari, requisits i detalls del projecte. |

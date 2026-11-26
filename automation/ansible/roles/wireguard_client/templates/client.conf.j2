@@ -1,0 +1,11 @@
+# {{ ansible_managed }}
+# Client WireGuard de VirtualCorp (delegació 25). SECRET: no el publiquis.
+[Interface]
+PrivateKey = {{ wg_client_private_key }}
+Address = {{ wg_client_address }}/32
+
+[Peer]
+PublicKey = {{ wg_server_public_key }}
+Endpoint = {{ wg_endpoint_host }}:{{ wg_endpoint_port }}
+AllowedIPs = {{ ([wg_tunnel_prefix] + (wg_authorized_networks | map(attribute='prefix') | list)) | join(', ') }}
+PersistentKeepalive = 25
